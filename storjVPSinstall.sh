@@ -23,8 +23,8 @@ iptables -F
 iptables -X 
 
 for counter in {28967..29000}; do
- iptables -t nat -A PREROUTING -p tcp --dport $counter -j DNAT --to-destination 83.89.251.143:$counter
- iptables -t nat -A PREROUTING -p udp --dport $counter -j DNAT --to-destination 83.89.251.143:$counter
+ iptables -t nat -A PREROUTING -p tcp --dport $counter -j DNAT --to-destination 212.27.25.143:$counter
+ iptables -t nat -A PREROUTING -p udp --dport $counter -j DNAT --to-destination 212.27.25.143:$counter
 done
 
 iptables -t nat -A POSTROUTING -j MASQUERADE
