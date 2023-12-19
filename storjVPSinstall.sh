@@ -22,7 +22,7 @@ iptables -t mangle -F
 iptables -F
 iptables -X 
 
-for counter in {28967..29900}; do
+for counter in {28967..29910}; do
  iptables -t nat -A PREROUTING -p tcp --dport $counter -j DNAT --to-destination 212.27.25.143:$counter
  iptables -t nat -A PREROUTING -p udp --dport $counter -j DNAT --to-destination 212.27.25.143:$counter
 done
