@@ -1,10 +1,11 @@
-#!/bin/bash
-
-apt update -y
-
-apt upgrade -y
-
-apt install iptables tcpdump joe iftop nload net-tools -y
+#!/bin/bash  
+  
+export DEBIAN_FRONTEND=noninteractive  
+  
+apt update -y  
+apt-get upgrade -y -o Dpkg::Options::="--force-confnew"  
+  
+apt install iptables tcpdump joe iftop nload net-tools -y 
 
 echo '#!/bin/bash
 
