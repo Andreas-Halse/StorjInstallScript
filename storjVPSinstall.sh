@@ -25,8 +25,8 @@ iptables -t mangle -F
 iptables -F  
 iptables -X  
   
-# Add NAT rules for ports 28967 to 29910  
-for counter in {28967..29910}; do  
+# Add NAT rules for ports 28967 to 29050  
+for counter in {28967..29050}; do  
   iptables -t nat -A PREROUTING -p tcp --dport $counter -j DNAT --to-destination 80.209.109.228:$counter  
   iptables -t nat -A PREROUTING -p udp --dport $counter -j DNAT --to-destination 80.209.109.228:$counter  
 done  
