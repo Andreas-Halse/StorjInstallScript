@@ -1,14 +1,4 @@
 #!/bin/bash
-set -e  # Exit on any error
-
-if [ -z "$1" ]; then
-  echo "Usage: $0 <UniqueID>"
-  echo "Example: curl -sL https://yourserver.com/vps_setup.sh | bash -s -- 1"
-  exit 1
-fi
-
-UNIQUE_ID=$1  # Get the unique ID from the command-line argument
-
 export DEBIAN_FRONTEND=noninteractive
 
 # Update and install WireGuard
@@ -26,18 +16,26 @@ wg genkey | tee /etc/wireguard/private.key | wg pubkey > /etc/wireguard/public.k
 PRIVATE_KEY=$(cat /etc/wireguard/private.key)
 PUBLIC_KEY=$(cat /etc/wireguard/public.key)
 
+# Hardcoded Raspberry Pi details
+PI_PUBLIC_KEY="IsbG//9EUBMp6UuNjQbnkD0cvpSEdXoyZ1z7R3WeHgM="
+PI_WG_IP="10.200.200.100"
+
+# Get the unique WireGuard IP for this VPS from the argument
+if [ -z "$1" ]; then
+  echo "Usage: $0 <UniqueID>"
+  exit 1
+fi
+UNIQUE_ID=$1
+VPS_WG_IP="10.200.200.$UNIQUE_ID"
+
 # Get the VPS public IP
 VPS_PUBLIC_IP=$(curl -s https://api.ipify.org)
 
-# Ask for Raspberry Pi public key and IP
-read -p "Enter Raspberry Pi Public Key: " PI_PUBLIC_KEY
-read -p "Enter Raspberry Pi WireGuard IP (e.g., 10.200.200.100): " PI_WG_IP
-
-# Configure WireGuard
+# Write WireGuard configuration
 cat <<EOF > /etc/wireguard/wg0.conf
 [Interface]
 PrivateKey = $PRIVATE_KEY
-Address = 10.200.200.$UNIQUE_ID/24
+Address = $VPS_WG_IP/24
 ListenPort = 51820
 
 # PostUp and PostDown NAT and forwarding rules
@@ -50,11 +48,11 @@ AllowedIPs = $PI_WG_IP/32
 EOF
 
 # Enable and start WireGuard
-systemctl enable wg-quick@wg0
-systemctl start wg-quick@wg0
+systemctl enable wg-quick@wg0.service
+systemctl start wg-quick@wg0.service
 
-# Output necessary info
+# Output necessary details
 echo "VPS Public Key: $PUBLIC_KEY"
 echo "VPS Public IP: $VPS_PUBLIC_IP"
-echo "VPS WireGuard IP: 10.200.200.$UNIQUE_ID"
+echo "VPS WireGuard IP: $VPS_WG_IP"
 echo "Share the VPS public key with the Raspberry Pi."
