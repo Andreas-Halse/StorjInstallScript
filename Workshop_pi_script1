@@ -1,0 +1,19 @@
+#!/bin/bash
+export DEBIAN_FRONTEND=noninteractive
+
+# Update system
+apt update -y && apt upgrade -y
+
+# Install WireGuard
+apt install -y wireguard
+
+# Generate WireGuard keys
+mkdir -p /etc/wireguard
+wg genkey | tee /etc/wireguard/private.key | wg pubkey > /etc/wireguard/public.key
+
+PRIVATE_KEY=$(cat /etc/wireguard/private.key)
+PUBLIC_KEY=$(cat /etc/wireguard/public.key)
+
+# Output Raspberry Pi's public key for sharing
+echo "Raspberry Pi Public Key: $PUBLIC_KEY"
+echo "Provide this key to all VPS nodes."
