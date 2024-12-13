@@ -1,0 +1,71 @@
+#!/bin/bash  
+export DEBIAN_FRONTEND=noninteractive  
+  
+# Update and upgrade the system  
+apt update -y  
+apt-get upgrade -y -o Dpkg::Options::="--force-confnew"  
+  
+# Install necessary packages  
+apt install iptables tcpdump joe iftop nload net-tools ssh -y  
+  
+# Create the NAT forwarding script  
+echo '#!/bin/bash  
+  
+# Enable IP forwarding  
+sysctl net.ipv4.ip_forward=1  
+
+# Set default policies to ACCEPT  
+iptables -P INPUT ACCEPT  
+iptables -P FORWARD ACCEPT  
+iptables -P OUTPUT ACCEPT  
+
+# Flush all existing rules  
+iptables -t nat -F  
+iptables -t mangle -F  
+iptables -F  
+iptables -X  
+
+# Define the local IP for SSH tunnel (VPS public IP for forwarding)  
+VPS_PUBLIC_IP="149.202.46.199"  
+
+# Add NAT rules for ports 3000 to 3012 (12 ports in total)  
+for counter in {3000..3012}; do  
+  # For TCP traffic, forward to the VPS via SSH tunnel  
+  iptables -t nat -A PREROUTING -p tcp --dport $counter -j DNAT --to-destination $VPS_PUBLIC_IP:$counter  
+  # For UDP traffic, forward to the VPS via SSH tunnel  
+  iptables -t nat -A PREROUTING -p udp --dport $counter -j DNAT --to-destination $VPS_PUBLIC_IP:$counter  
+done  
+
+# Add masquerading to allow traffic forwarding to external IP  
+iptables -t nat -A POSTROUTING -j MASQUERADE  
+
+# Set up SSH tunnel to forward the ports (3000 to 3012) from VPS to local machine
+ssh -f -N -R 3000:localhost:3000 -R 3001:localhost:3001 -R 3002:localhost:3002 -R 3003:localhost:3003 -R 3004:localhost:3004 -R 3005:localhost:3005 -R 3006:localhost:3006 -R 3007:localhost:3007 -R 3008:localhost:3008 -R 3009:localhost:3009 -R 3010:localhost:3010 -R 3011:localhost:3011 -R 3012:localhost:3012 debian@149.202.46.199
+
+' > /root/make-nat-forwards-to-vps.sh  
+  
+# Set executable permissions on the NAT forwarding script  
+chmod 777 /root/make-nat-forwards-to-vps.sh  
+
+# Install additional packages  
+apt install -y iptables joe tcpdump nload iftop  
+
+# Configure system parameters  
+echo "net.core.rmem_max=2500000" >> /etc/sysctl.conf  
+echo "net.ipv4.tcp_fastopen=3" >> /etc/sysctl.conf  
+sysctl -w net.core.rmem_max=2500000  
+sysctl -w net.ipv4.tcp_fastopen=3  
+
+# Create /etc/rc.local to run the NAT forwarding script on startup  
+echo '#!/bin/sh -e  
+/root/make-nat-forwards-to-vps.sh  
+exit 0  
+' > /etc/rc.local  
+
+# Set ownership and permissions on /etc/rc.local  
+chown root /etc/rc.local  
+chmod 755 /etc/rc.local  
+
+# Update nameservers  
+sed -i '/nameserver/c\nameserver 8.8.8.8 8.8.4.4' /etc/resolv.conf  
+
