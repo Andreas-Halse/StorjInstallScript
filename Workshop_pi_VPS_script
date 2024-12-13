@@ -1,8 +1,10 @@
 #!/bin/bash
 export DEBIAN_FRONTEND=noninteractive
 
-# Update and install WireGuard
+# Update system
 apt update -y && apt upgrade -y
+
+# Install necessary packages
 apt install -y wireguard iptables-persistent net-tools curl
 
 # Enable IP forwarding
@@ -16,43 +18,44 @@ wg genkey | tee /etc/wireguard/private.key | wg pubkey > /etc/wireguard/public.k
 PRIVATE_KEY=$(cat /etc/wireguard/private.key)
 PUBLIC_KEY=$(cat /etc/wireguard/public.key)
 
-# Hardcoded Raspberry Pi details
-PI_PUBLIC_KEY="IsbG//9EUBMp6UuNjQbnkD0cvpSEdXoyZ1z7R3WeHgM="
-PI_WG_IP="10.200.200.100"
-
-# Get the unique WireGuard IP for this VPS from the argument
-if [ -z "$1" ]; then
-  echo "Usage: $0 <UniqueID>"
-  exit 1
-fi
-UNIQUE_ID=$1
-VPS_WG_IP="10.200.200.$UNIQUE_ID"
-
-# Get the VPS public IP
+# Get the public IP of the VPS
 VPS_PUBLIC_IP=$(curl -s https://api.ipify.org)
 
-# Write WireGuard configuration
+# Hardcoded Raspberry Pi Public Key
+PI_PUBLIC_KEY="IsbG//9EUBMp6UuNjQbnkD0cvpSEdXoyZ1z7R3WeHgM="
+
+# WireGuard configuration
+VPS_WG_IP="10.200.200.$1"
 cat <<EOF > /etc/wireguard/wg0.conf
 [Interface]
 PrivateKey = $PRIVATE_KEY
 Address = $VPS_WG_IP/24
 ListenPort = 51820
 
-# PostUp and PostDown NAT and forwarding rules
+# PostUp/Down for NAT and forwarding
 PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
 
 [Peer]
 PublicKey = $PI_PUBLIC_KEY
-AllowedIPs = $PI_WG_IP/32
+AllowedIPs = 10.200.200.100/32
 EOF
 
-# Enable and start WireGuard
-systemctl enable wg-quick@wg0.service
-systemctl start wg-quick@wg0.service
+# Enable WireGuard
+systemctl enable wg-quick@wg0
+systemctl start wg-quick@wg0
 
-# Output necessary details
+# Add port forwarding for Storj
+iptables -t nat -A PREROUTING -p tcp --dport 28967 -j DNAT --to-destination 10.200.200.100:28967
+iptables -t nat -A PREROUTING -p udp --dport 28967 -j DNAT --to-destination 10.200.200.100:28967
+iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE
+iptables -A FORWARD -p tcp -d 10.200.200.100 --dport 28967 -j ACCEPT
+iptables -A FORWARD -p udp -d 10.200.200.100 --dport 28967 -j ACCEPT
+
+# Save iptables rules
+iptables-save > /etc/iptables/rules.v4
+
+# Output details
 echo "VPS Public Key: $PUBLIC_KEY"
 echo "VPS Public IP: $VPS_PUBLIC_IP"
-echo "VPS WireGuard IP: $VPS_WG_IP"
-echo "Share the VPS public key with the Raspberry Pi."
+echo "WireGuard IP: $VPS_WG_IP"
