@@ -52,6 +52,9 @@ iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE
 iptables -A FORWARD -p tcp -d 10.200.200.100 --dport 28967 -j ACCEPT
 iptables -A FORWARD -p udp -d 10.200.200.100 --dport 28967 -j ACCEPT
 
+# important:
+sudo iptables -t nat -A POSTROUTING -o wg0 -j MASQUERADE
+
 # Save iptables rules
 iptables-save > /etc/iptables/rules.v4
 
