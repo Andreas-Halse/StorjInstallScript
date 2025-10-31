@@ -1,5 +1,4 @@
 #!/bin/bash
-
 export DEBIAN_FRONTEND=noninteractive
 
 # Update and upgrade the system
@@ -15,32 +14,29 @@ echo '#!/bin/bash
 # Enable IP forwarding
 sysctl net.ipv4.ip_forward=1
 
-# Set default policies to ACCEPT (but don'\''t flush existing rules)
+# Set default policies to ACCEPT
 iptables -P INPUT ACCEPT
 iptables -P FORWARD ACCEPT
 iptables -P OUTPUT ACCEPT
 
-# Add NAT rules for ports 3000 to 3100 (without flushing existing rules)
-for counter in {3000..3100}; do
-    # Check if rule already exists before adding (to avoid duplicates)
-    if ! iptables -t nat -C PREROUTING -p tcp --dport $counter -j DNAT --to-destination 80.209.109.231:$counter 2>/dev/null; then
-        iptables -t nat -A PREROUTING -p tcp --dport $counter -j DNAT --to-destination 80.209.109.231:$counter
-    fi
-    
-    if ! iptables -t nat -C PREROUTING -p udp --dport $counter -j DNAT --to-destination 80.209.109.231:$counter 2>/dev/null; then
-        iptables -t nat -A PREROUTING -p udp --dport $counter -j DNAT --to-destination 80.209.109.231:$counter
-    fi
+# Flush all existing rules
+iptables -t nat -F
+iptables -t mangle -F
+iptables -F
+iptables -X
+
+# Add NAT rules for ports 31000 to 31100
+for counter in {31000..31100}; do
+  iptables -t nat -A PREROUTING -p tcp --dport $counter -j DNAT --to-destination 80.209.109.231:$counter
+  iptables -t nat -A PREROUTING -p udp --dport $counter -j DNAT --to-destination 80.209.109.231:$counter
 done
 
-# Add masquerading (check if it already exists)
-if ! iptables -t nat -C POSTROUTING -j MASQUERADE 2>/dev/null; then
-    iptables -t nat -A POSTROUTING -j MASQUERADE
-fi
-
-' > /root/make-nat-forwards-3000-3100.sh
+# Add masquerading
+iptables -t nat -A POSTROUTING -j MASQUERADE
+' > /root/make-nat-forwards-to-80-209-109-231.sh
 
 # Set executable permissions on the NAT forwarding script
-chmod 777 /root/make-nat-forwards-3000-3100.sh
+chmod 777 /root/make-nat-forwards-to-80-209-109-231.sh
 
 # Install additional packages
 apt install -y iptables joe tcpdump nload iftop
@@ -53,7 +49,7 @@ sysctl -w net.ipv4.tcp_fastopen=3
 
 # Create /etc/rc.local to run the NAT forwarding script on startup
 echo '#!/bin/sh -e
-/root/make-nat-forwards-3000-3100.sh
+/root/make-nat-forwards-to-80-209-109-231.sh
 exit 0
 ' > /etc/rc.local
 
@@ -62,4 +58,4 @@ chown root /etc/rc.local
 chmod 755 /etc/rc.local
 
 # Update nameservers
-sed -i '/nameserver/c\nameserver 8.8.8.8\nnameserver 8.8.4.4' /etc/resolv.conf
+sed -i '/nameserver/c\nameserver 8.8.8.8 8.8.4.4' /etc/resolv.conf
