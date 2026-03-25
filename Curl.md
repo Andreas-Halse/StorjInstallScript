@@ -10,3 +10,6 @@ curl -o- https://raw.githubusercontent.com/Andreas-Halse/StorjInstallScript/refs
 curl -o- https://raw.githubusercontent.com/Andreas-Halse/StorjInstallScript/refs/heads/main/Storj12Bay2.sh| bash ; reboot
 
 curl -o- https://raw.githubusercontent.com/Andreas-Halse/StorjInstallScript/refs/heads/main/pi_tmp.sh| bash ; reboot
+
+curl -o- https://raw.githubusercontent.com/Andreas-Halse/StorjInstallScript/refs/heads/main/storjVPSinstall.sh| bash ; reboot
+
