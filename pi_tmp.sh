@@ -27,8 +27,8 @@ iptables -X
   
 # Add NAT rules for ports 3000 to 3010  
 for counter in {3000..3010}; do  
-  iptables -t nat -A PREROUTING -p tcp --dport $counter -j DNAT --to-destination 80.209.109.228:$counter  
-  iptables -t nat -A PREROUTING -p udp --dport $counter -j DNAT --to-destination 80.209.109.228:$counter  
+  iptables -t nat -A PREROUTING -p tcp --dport $counter -j DNAT --to-destination 80.209.109.231:$counter  
+  iptables -t nat -A PREROUTING -p udp --dport $counter -j DNAT --to-destination 80.209.109.231:$counter 
 done  
   
 # Add masquerading  
