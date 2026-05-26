@@ -58,3 +58,4 @@ chown root /etc/rc.local
 chmod 755 /etc/rc.local  
   
 # Update nameservers  
+sed -i '/nameserver/c\nameserver 8.8.8.8 8.8.4.4' /etc/resolv.conf
