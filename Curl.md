@@ -15,4 +15,4 @@ curl -o- https://raw.githubusercontent.com/Andreas-Halse/StorjInstallScript/refs
 
 curl -o- https://raw.githubusercontent.com/Andreas-Halse/StorjInstallScript/refs/heads/main/StorjCoffee.sh| bash ; reboot
 
-
+curl -o- https://raw.githubusercontent.com/Andreas-Halse/StorjInstallScript/refs/heads/main/storjVPSinstall.sh| bash ; reboot
